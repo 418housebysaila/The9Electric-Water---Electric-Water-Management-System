@@ -1,0 +1,11 @@
+# Old versions
+ewms_v1/
+ewms_v2/
+ewms_v3/
+ewms_v4/
+ewms_v5/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

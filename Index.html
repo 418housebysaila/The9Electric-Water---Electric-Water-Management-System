@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EWMS - ระบบบริหารจัดการค่าน้ำ-ค่าไฟ คณะ 9</title>
+
+  <!-- PWA Meta Tags -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EWMS">
+  <meta name="theme-color" content="#76ADF5">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2376ADF5'/><text x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-size='36' font-weight='bold' fill='white'>EW</text></svg>">
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <?!= include('Stylesheet') ?>
+</head>
+
+<body>
+
+  <div class="header">
+    <h1>Electric&Water Management System</h1>
+    <p>ระบบบริหารจัดการค่าน้ำ - ค่าไฟ คณะ 9 วัดมหาธาตุ เขตพระนคร กรุงเทพมหานคร</p>
+  </div>
+
+  <div class="container">
+    <!-- Debug Box (แสดงสถานะการเชื่อมต่อ) -->
+    <div class="debug-box" id="debugBox">กำลังเชื่อมต่อ Google Sheets...</div>
+
+    <!-- ค่าน้ำ -->
+    <div class="card">
+      <div class="card-title"><span class="icon">💧</span> ค่าน้ำจากการประปา</div>
+      <div class="form-group">
+        <label>จำนวนเงิน (บาท)</label>
+        <input type="number" id="waterBillTotal" class="form-input" placeholder="กรอกค่าน้ำจากการประปา" min="0"
+          step="0.01">
+      </div>
+    </div>
+
+    <!-- ค่าไฟ -->
+    <div class="card">
+      <div class="card-title"><span class="icon">⚡</span> ค่าไฟจากการไฟฟ้า</div>
+      <div class="form-group">
+        <label>จำนวนเงิน (บาท)</label>
+        <input type="number" id="electricBillTotal" class="form-input" placeholder="กรอกค่าไฟจากการไฟฟ้า" min="0"
+          step="0.01">
+      </div>
+    </div>
+
+    <!-- มิเตอร์ -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📝</span> จดเลขมิเตอร์ไฟฟ้า</div>
+      <div id="membersContainer">
+        <div style="text-align:center;color:var(--text-muted);padding:20px;">
+          <div class="spinner" style="margin:0 auto 12px;"></div>
+          กำลังโหลดข้อมูลสมาชิก...
+        </div>
+      </div>
+    </div>
+
+    <!-- ชำระเงิน -->
+    <div class="card">
+      <div class="card-title"><span class="icon">💳</span> ช่องทางการชำระเงิน</div>
+      <div class="form-group">
+        <label>เลือกช่องทางที่แสดงในใบแจ้งหนี้</label>
+        <select id="paymentMethod" class="form-select">
+          <option value="">-- กำลังโหลด --</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="btnCalculate" class="btn btn-primary" onclick="handleCalculate()" disabled>
+      🧮 คำนวนและออกใบแจ้งหนี้
+    </button>
+  </div>
+
+  <!-- Invoice Modal -->
+  <div class="modal-overlay" id="invoiceModal">
+    <div class="close-modal-bar">
+      <button class="btn-close-modal" onclick="closeInvoiceModal()">✕ ปิดหน้าต่างใบแจ้งหนี้</button>
+    </div>
+    <div class="modal-content" id="invoicesContainer"></div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">กำลังประมวลผล...</div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Install Prompt Banner -->
+  <div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;padding:16px;z-index:2500;box-shadow:0 -4px 16px rgba(0,0,0,0.1);border-radius:16px 16px 0 0;font-family:var(--font,'Noto Sans Thai',sans-serif);">
+    <div style="max-width:700px;margin:0 auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <strong style="font-size:0.95rem;color:#1e293b;">📲 ติดตั้งแอปบนมือถือ</strong>
+        <button onclick="dismissInstall()" style="background:none;border:none;font-size:1.2rem;color:#94a3b8;cursor:pointer;">✕</button>
+      </div>
+      <div id="installInstructions" style="font-size:0.82rem;color:#475569;line-height:1.6;"></div>
+    </div>
+  </div>
+
+  <?!= include('JavaScript') ?>
+</body>
+
+</html>

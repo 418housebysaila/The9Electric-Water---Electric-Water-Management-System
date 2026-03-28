@@ -1,0 +1,416 @@
+<script>
+// ============ STATE ============
+var membersData = [];
+var paymentMethods = [];
+var lastSummary = null;
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', init);
+
+function init() {
+  document.getElementById('debugBox').textContent = 'เริ่มโหลดข้อมูล...';
+  
+  // ทดสอบการเชื่อมต่อก่อน
+  google.script.run
+    .withSuccessHandler(function(result) {
+      if (result.success) {
+        document.getElementById('debugBox').textContent = 'เชื่อมต่อสำเร็จ (' + result.sheetName + ': ' + result.rowCount + ' แถว) กำลังโหลดข้อมูล...';
+        loadMembers();
+        loadPaymentMethods();
+      } else {
+        document.getElementById('debugBox').textContent = 'เชื่อมต่อล้มเหลว: ' + result.error + (result.sheets ? ' | ชีทที่มี: ' + result.sheets.join(', ') : '');
+      }
+    })
+    .withFailureHandler(function(e) {
+      document.getElementById('debugBox').textContent = 'ERROR: ' + e.message;
+    })
+    .testConnection();
+}
+
+function loadMembers() {
+  google.script.run
+    .withSuccessHandler(onMembersLoaded)
+    .withFailureHandler(function(e) {
+      document.getElementById('membersContainer').innerHTML = '<div class="debug-box">โหลดสมาชิกล้มเหลว: ' + e.message + '</div>';
+    })
+    .getMembers();
+}
+
+function loadPaymentMethods() {
+  google.script.run
+    .withSuccessHandler(onPaymentMethodsLoaded)
+    .withFailureHandler(function(e) {
+      document.getElementById('debugBox').textContent += ' | โหลดช่องทางชำระล้มเหลว: ' + e.message;
+    })
+    .getPaymentMethods();
+}
+
+// ============ RENDER MEMBERS ============
+function onMembersLoaded(members) {
+  membersData = members;
+  document.getElementById('debugBox').textContent = 'โหลดสมาชิกสำเร็จ: ' + members.length + ' คน';
+  
+  var container = document.getElementById('membersContainer');
+  container.innerHTML = '';
+
+  for (var idx = 0; idx < members.length; idx++) {
+    var m = members[idx];
+    var isExempt = m.isExemptElectric;
+    var card = document.createElement('div');
+    card.className = 'member-card' + (isExempt ? ' exempt' : '');
+    card.id = 'member-' + m.memberId;
+
+    var html = '<div class="member-header"><div>' +
+      '<span class="member-name">' + m.name + '</span> ' +
+      '<span class="member-id">' + m.memberId + ' | ' + m.meterNo + '</span>' +
+      '</div>' +
+      (isExempt ? '<span class="exempt-badge"><i class="fa-solid fa-triangle-exclamation"></i> ยกเว้นการคิดค่าไฟฟ้า</span>' : '') +
+      '</div>';
+
+    if (isExempt) {
+      html += '<div class="meter-row">' +
+        '<div class="form-group"><label>เลขมิเตอร์ก่อน</label>' +
+        '<input type="number" class="form-input" disabled placeholder="ยกเว้น" data-field="meterBefore" data-id="' + m.memberId + '"></div>' +
+        '<div class="form-group"><label>เลขมิเตอร์หลัง</label>' +
+        '<input type="number" class="form-input" disabled placeholder="ยกเว้น" data-field="meterAfter" data-id="' + m.memberId + '"></div></div>';
+    } else {
+      html += '<div class="meter-row">' +
+        '<div class="form-group"><label>เลขมิเตอร์ก่อน</label>' +
+        '<input type="number" class="form-input" value="' + (m.lastMeterReading || '') + '" placeholder="เลขครั้งก่อน" data-field="meterBefore" data-id="' + m.memberId + '" disabled></div>' +
+        '<div class="form-group"><label>เลขมิเตอร์หลัง</label>' +
+        '<input type="number" class="form-input" placeholder="เลขครั้งนี้" data-field="meterAfter" data-id="' + m.memberId + '"></div></div>';
+    }
+
+    html += '<div class="toggles">';
+    html += makeToggle(m.memberId, 'water', 'ค่าน้ำ', m.waterActive);
+    if (!isExempt) {
+      html += makeToggle(m.memberId, 'electric', 'ค่าไฟห้อง', m.electricActive);
+      html += makeToggle(m.memberId, 'common', 'ไฟส่วนกลาง', m.commonElectricActive);
+    }
+    html += '</div>';
+
+    card.innerHTML = html;
+    container.appendChild(card);
+  }
+
+  // Toggle click events
+  var toggles = document.querySelectorAll('.toggle-switch');
+  for (var t = 0; t < toggles.length; t++) {
+    toggles[t].addEventListener('click', function() {
+      this.classList.toggle('active');
+    });
+  }
+
+  checkReady();
+}
+
+function makeToggle(id, type, label, isActive) {
+  return '<div class="toggle-item">' +
+    '<div class="toggle-switch ' + (isActive ? 'active' : '') + '" data-toggle="' + type + '" data-id="' + id + '"></div>' +
+    '<span>' + label + '</span></div>';
+}
+
+// ============ RENDER PAYMENT METHODS ============
+function onPaymentMethodsLoaded(methods) {
+  paymentMethods = methods;
+  var select = document.getElementById('paymentMethod');
+  select.innerHTML = '<option value="">-- เลือกช่องทางชำระเงิน --</option>';
+  for (var i = 0; i < methods.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = methods[i].methodId;
+    opt.textContent = methods[i].methodName + ' - ' + methods[i].accountName + ' (' + methods[i].accountNumber + ')';
+    select.appendChild(opt);
+  }
+  checkReady();
+}
+
+function checkReady() {
+  document.getElementById('btnCalculate').disabled = (membersData.length === 0);
+}
+
+// ============ CALCULATE ============
+function handleCalculate() {
+  var waterBill = document.getElementById('waterBillTotal').value;
+  var electricBill = document.getElementById('electricBillTotal').value;
+  var paymentMethodId = document.getElementById('paymentMethod').value;
+
+  if (!waterBill || parseFloat(waterBill) <= 0) { showToast('กรุณากรอกค่าน้ำจากการประปา', true); return; }
+  if (!electricBill || parseFloat(electricBill) <= 0) { showToast('กรุณากรอกค่าไฟจากการไฟฟ้า', true); return; }
+  if (!paymentMethodId) { showToast('กรุณาเลือกช่องทางการชำระเงิน', true); return; }
+
+  var members = [];
+  for (var i = 0; i < membersData.length; i++) {
+    var m = membersData[i];
+    var mb = document.querySelector('[data-field="meterBefore"][data-id="' + m.memberId + '"]');
+    var ma = document.querySelector('[data-field="meterAfter"][data-id="' + m.memberId + '"]');
+    var wt = document.querySelector('[data-toggle="water"][data-id="' + m.memberId + '"]');
+    var et = document.querySelector('[data-toggle="electric"][data-id="' + m.memberId + '"]');
+    var ct = document.querySelector('[data-toggle="common"][data-id="' + m.memberId + '"]');
+
+    members.push({
+      memberId: m.memberId,
+      name: m.name,
+      meterNo: m.meterNo,
+      meterBefore: mb ? mb.value : 0,
+      meterAfter: ma ? ma.value : 0,
+      waterActive: wt ? wt.classList.contains('active') : false,
+      electricActive: et ? et.classList.contains('active') : false,
+      commonElectricActive: ct ? ct.classList.contains('active') : false,
+      isExemptElectric: m.isExemptElectric
+    });
+  }
+
+  showLoading('กำลังคำนวนและบันทึกข้อมูล...');
+  google.script.run
+    .withSuccessHandler(onCalcSuccess)
+    .withFailureHandler(function(e) { hideLoading(); showToast('เกิดข้อผิดพลาด: ' + e.message, true); })
+    .calculateAndSave({ waterBillTotal: waterBill, electricBillTotal: electricBill, paymentMethodId: paymentMethodId, members: members });
+}
+
+// ============ INVOICES ============
+function onCalcSuccess(summary) {
+  hideLoading();
+  lastSummary = summary;
+  renderInvoices(summary);
+  document.getElementById('invoiceModal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderInvoices(summary) {
+  var container = document.getElementById('invoicesContainer');
+  container.innerHTML = '';
+
+  for (var idx = 0; idx < summary.members.length; idx++) {
+    var m = summary.members[idx];
+    var wrapper = document.createElement('div');
+    wrapper.style.marginBottom = '24px';
+
+    var invDiv = document.createElement('div');
+    invDiv.className = 'invoice';
+    invDiv.id = 'invoice-' + m.memberId;
+
+    var pm = summary.paymentMethod;
+    var paymentHtml = '';
+    if (pm && pm.methodName) {
+      paymentHtml = '<div class="inv-payment"><div class="inv-payment-title"><i class="fa-solid fa-credit-card"></i> ชำระค่าน้ำ-ค่าไฟ ได้ที่</div>' +
+        '<div><strong>' + pm.methodName + '</strong></div>' +
+        '<div>ชื่อบัญชี: ' + pm.accountName + '</div>' +
+        '<div>เลขที่บัญชี: <strong>' + pm.accountNumber + '</strong></div></div>';
+    }
+
+    var electricDetail = '';
+    if (m.isExemptElectric) {
+      electricDetail = '<div class="inv-detail">(ยกเว้นการคิดค่าไฟฟ้า)</div>';
+    } else if (m.electricActive) {
+      electricDetail = '<div class="inv-detail">(' + m.meterBefore + ' → ' + m.meterAfter + ' = ' + m.unitsUsed + ' หน่วย × ' + summary.ratePerUnit + ' บาท)</div>';
+    } else {
+      electricDetail = '<div class="inv-detail">(ไม่เข้าร่วม)</div>';
+    }
+
+    var commonDetail = '';
+    if (m.isExemptElectric) {
+      commonDetail = '<div class="inv-detail">(ยกเว้น)</div>';
+    } else if (m.commonElectricActive) {
+      commonDetail = '<div class="inv-detail">(หารเฉลี่ย ' + summary.commonActiveCount + ' คน)</div>';
+    } else {
+      commonDetail = '<div class="inv-detail">(ไม่เข้าร่วม)</div>';
+    }
+
+    invDiv.innerHTML = '<div class="inv-center">' +
+      '<div class="inv-member-label">' + m.memberId + ' | ' + m.name + '</div>' +
+      '<div style="font-size:0.82rem;color:#64748b;margin-bottom:8px;">มิเตอร์: ' + (m.meterNo || '-') + '</div>' +
+      '<div class="inv-title">ใบแจ้งหนี้ / Invoice</div>' +
+      '<div class="inv-subtitle">ระบบบริหารจัดการค่าน้ำ - ค่าไฟ คณะ 9</div>' +
+      '<div class="inv-subtitle">วัดมหาธาตุฯ เขตพระนคร กรุงเทพมหานคร</div>' +
+      '<div class="inv-month">เดือน ' + summary.billingMonth + '</div></div>' +
+      '<hr class="inv-divider">' +
+      '<div class="inv-row"><span class="label"><i class="fa-solid fa-droplet" style="color:#3b82f6"></i> ค่าน้ำจากการประปา</span><span class="value">' + fmtNum(summary.waterBillTotal) + ' บาท</span></div>' +
+      '<div class="inv-row"><span class="label"><i class="fa-solid fa-bolt" style="color:#f59e0b"></i> ค่าไฟจากการไฟฟ้า</span><span class="value">' + fmtNum(summary.electricBillTotal) + ' บาท</span></div>' +
+      '<hr class="inv-divider">' +
+      '<div class="inv-row"><span class="label"><i class="fa-solid fa-droplet" style="color:#3b82f6"></i> ค่าน้ำ</span><span class="value">' + fmtNum(m.waterAmount) + ' บาท</span></div>' +
+      (m.waterActive ? '<div class="inv-detail">(หารเฉลี่ย ' + summary.waterActiveCount + ' คน)</div>' : '<div class="inv-detail">(ไม่เข้าร่วม)</div>') +
+      '<div class="inv-row"><span class="label"><i class="fa-solid fa-bolt" style="color:#f59e0b"></i> ค่าไฟฟ้า</span><span class="value">' + fmtNum(m.roomElectric) + ' บาท</span></div>' +
+      electricDetail +
+      '<div class="inv-row"><span class="label"><i class="fa-solid fa-building" style="color:#8b5cf6"></i> ค่าไฟฟ้าส่วนกลาง</span><span class="value">' + fmtNum(m.commonElectric) + ' บาท</span></div>' +
+      commonDetail +
+      '<hr class="inv-divider">' +
+      '<div class="inv-total-row"><span><i class="fa-solid fa-coins"></i> รวมทั้งสิ้น</span><span>' + fmtNum(m.totalAmount) + ' บาท</span></div>' +
+      paymentHtml +
+      '<hr class="inv-divider">' +
+      '<div class="inv-note">หมายเหตุ: จดมิเตอร์ทุกวันที่ 25 ของเดือน</div>' +
+      '<div class="inv-credit">The9Electric&Water by Saila</div>';
+
+    wrapper.appendChild(invDiv);
+
+    // ปุ่ม actions
+    var actDiv = document.createElement('div');
+    actDiv.className = 'btn-actions';
+    actDiv.innerHTML = '<button class="btn-sm btn-save" onclick="saveImage(\'' + m.memberId + '\',\'' + m.name + '\')"><i class="fa-solid fa-camera"></i> บันทึกรูปภาพ</button>' +
+      '<button class="btn-sm btn-print" onclick="printInv(\'' + m.memberId + '\')"><i class="fa-solid fa-print"></i> พิมพ์</button>' +
+      '<button class="btn-sm btn-line" onclick="shareLine(\'' + m.memberId + '\')"><i class="fa-brands fa-line"></i> ส่ง LINE</button>';
+    wrapper.appendChild(actDiv);
+    container.appendChild(wrapper);
+  }
+}
+
+// ============ ACTIONS ============
+function saveImage(memberId, name) {
+  var el = document.getElementById('invoice-' + memberId);
+  showToast('กำลังสร้างรูปภาพ...');
+  html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(function(canvas) {
+    var link = document.createElement('a');
+    link.download = 'invoice_' + memberId + '_' + name + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('✅ บันทึกรูปภาพสำเร็จ');
+  }).catch(function() { showToast('เกิดข้อผิดพลาด', true); });
+}
+
+function printInv(memberId) {
+  var el = document.getElementById('invoice-' + memberId);
+  var win = window.open('', '_blank');
+  win.document.write('<html><head><meta charset="UTF-8"><title>ใบแจ้งหนี้</title><style>' +
+    'body{font-family:sans-serif;padding:20px;color:#1a1a2e}' +
+    '.inv-center{text-align:center}.inv-title{font-size:1.3rem;font-weight:700;color:#4f46e5}' +
+    '.inv-subtitle{font-size:0.9rem;color:#555}.inv-month{font-size:1rem;font-weight:600;margin-top:4px}' +
+    '.inv-divider{border:none;border-top:1px dashed #ccc;margin:12px 0}' +
+    '.inv-row{display:flex;justify-content:space-between;padding:2px 0}.inv-row .label{color:#555}.inv-row .value{font-weight:600}' +
+    '.inv-detail{font-size:0.8rem;color:#888;margin-left:8px}' +
+    '.inv-total-row{display:flex;justify-content:space-between;padding:8px 12px;background:#f0f0ff;border-radius:8px;margin-top:8px;font-weight:700;color:#4f46e5}' +
+    '.inv-payment{background:#f8f9fa;border-radius:10px;padding:12px;margin-top:12px;text-align:center}' +
+    '.inv-payment-title{font-weight:600;color:#4f46e5;margin-bottom:6px}' +
+    '.inv-note{font-size:0.8rem;color:#888;text-align:center;margin-top:12px}' +
+    '.inv-credit{text-align:center;margin-top:10px;font-size:0.8rem;color:#aaa}' +
+    '.inv-member-label{font-size:0.85rem;color:#fff;background:#4f46e5;padding:4px 12px;border-radius:20px;display:inline-block;margin-bottom:10px}' +
+    '</style></head><body>' + el.innerHTML + '</body></html>');
+  win.document.close();
+  win.print();
+}
+
+function shareLine(memberId) {
+  if (!lastSummary) return;
+  var member = null;
+  for (var i = 0; i < lastSummary.members.length; i++) {
+    if (lastSummary.members[i].memberId === memberId) { member = lastSummary.members[i]; break; }
+  }
+  if (!member) { showToast('ไม่พบข้อมูลสมาชิก', true); return; }
+
+  var el = document.getElementById('invoice-' + memberId);
+  showToast('กำลังสร้างรูปใบแจ้งหนี้...');
+
+  // แปลงใบแจ้งหนี้เป็นรูปภาพ
+  html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(function(canvas) {
+
+    // แปลง canvas เป็น Blob (ไฟล์รูปภาพ)
+    canvas.toBlob(function(blob) {
+      var fileName = 'invoice_' + memberId + '_' + member.name + '.png';
+      var file = new File([blob], fileName, { type: 'image/png' });
+
+      // ตรวจสอบว่ารองรับ Web Share API + แชร์ไฟล์ได้ไหม
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+          title: 'ใบแจ้งหนี้ ' + member.name,
+          text: 'ใบแจ้งหนี้ค่าน้ำ-ค่าไฟ เดือน ' + lastSummary.billingMonth,
+          files: [file]
+        }).then(function() {
+          showToast('✅ ส่งรูปใบแจ้งหนี้สำเร็จ');
+        }).catch(function(err) {
+          if (err.name !== 'AbortError') {
+            showToast('ยกเลิกการส่ง', true);
+          }
+        });
+      } else {
+        // Fallback: ส่งเป็นข้อความแทน (กรณี PC หรือเบราว์เซอร์ไม่รองรับ)
+        shareLineText(memberId, member);
+      }
+    }, 'image/png');
+
+  }).catch(function() {
+    showToast('สร้างรูปไม่สำเร็จ ลองส่งเป็นข้อความแทน', true);
+    shareLineText(memberId, member);
+  });
+}
+
+// Fallback: ส่งข้อความทาง LINE (สำหรับ PC หรือเบราว์เซอร์ที่ไม่รองรับ)
+function shareLineText(memberId, member) {
+  var pm = lastSummary.paymentMethod;
+  var msg = '📋 ใบแจ้งหนี้/Invoice\n' +
+    'ระบบค่าน้ำ-ค่าไฟ คณะ 9\nวัดมหาธาตุฯ กรุงเทพฯ\n' +
+    'เดือน ' + lastSummary.billingMonth + '\n━━━━━━━━━━━━\n' +
+    '👤 ' + member.name + ' (' + memberId + ')\n━━━━━━━━━━━━\n';
+  if (member.waterActive) msg += '💧 ค่าน้ำ: ' + fmtNum(member.waterAmount) + ' บาท (หาร ' + lastSummary.waterActiveCount + ' คน)\n';
+  if (!member.isExemptElectric && member.electricActive) {
+    msg += '⚡ ค่าไฟ: ' + fmtNum(member.roomElectric) + ' บาท (' + member.meterBefore + '→' + member.meterAfter + '=' + member.unitsUsed + ' หน่วย)\n';
+  }
+  if (!member.isExemptElectric && member.commonElectricActive) {
+    msg += '🏢 ไฟส่วนกลาง: ' + fmtNum(member.commonElectric) + ' บาท (หาร ' + lastSummary.commonActiveCount + ' คน)\n';
+  }
+  msg += '━━━━━━━━━━━━\n💰 รวม: ' + fmtNum(member.totalAmount) + ' บาท\n';
+  if (pm && pm.methodName) {
+    msg += '━━━━━━━━━━━━\n💳 ชำระที่: ' + pm.methodName + '\n' + pm.accountName + '\nเลขที่: ' + pm.accountNumber + '\n';
+  }
+  msg += '━━━━━━━━━━━━\nThe9Electric&Water by Saila';
+
+  window.open('https://line.me/R/share?text=' + encodeURIComponent(msg), '_blank');
+  showToast('✅ เปิด LINE เรียบร้อย (ส่งเป็นข้อความ)');
+}
+
+function closeInvoiceModal() {
+  if (confirm('ปิดหน้าใบแจ้งหนี้?\n(ตรวจสอบว่าส่งครบทุกคนแล้ว)')) {
+    document.getElementById('invoiceModal').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+}
+
+// ============ UTILITIES ============
+function fmtNum(n) { return parseFloat(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function showLoading(t) { document.getElementById('loadingText').textContent = t || 'กำลังประมวลผล...'; document.getElementById('loadingOverlay').classList.add('show'); }
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+function showToast(msg, isErr) {
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.background = isErr ? '#ef4444' : '#10b981';
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 3000);
+}
+
+// ============ INSTALL TO HOME SCREEN ============
+function checkInstallPrompt() {
+  // ข้ามถ้าอยู่ใน standalone mode (ติดตั้งแล้ว) หรือเคยปิดไปแล้ว
+  if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) return;
+  if (localStorage.getItem('ewms_install_dismissed')) return;
+
+  var banner = document.getElementById('installBanner');
+  var instructions = document.getElementById('installInstructions');
+  if (!banner || !instructions) return;
+
+  var ua = navigator.userAgent;
+  var isIOS = /iPad|iPhone|iPod/.test(ua);
+  var isAndroid = /Android/.test(ua);
+
+  if (isIOS) {
+    instructions.innerHTML =
+      '<b>iPhone/iPad:</b><br>' +
+      '1. กดปุ่ม <b>แชร์</b> (ไอคอน ⬆️ ด้านล่าง)<br>' +
+      '2. เลื่อนลงแล้วกด <b>"เพิ่มไปยังหน้าจอโฮม"</b><br>' +
+      '3. กด <b>"เพิ่ม"</b> — จะมีไอคอน EWMS บนหน้าจอ';
+    banner.style.display = 'block';
+  } else if (isAndroid) {
+    instructions.innerHTML =
+      '<b>Android:</b><br>' +
+      '1. กดปุ่ม <b>⋮</b> (จุดสามจุด) มุมขวาบน<br>' +
+      '2. กด <b>"เพิ่มลงในหน้าจอหลัก"</b> หรือ <b>"Install app"</b><br>' +
+      '3. กด <b>"เพิ่ม"</b> — จะมีไอคอน EWMS บนหน้าจอ';
+    banner.style.display = 'block';
+  }
+}
+
+function dismissInstall() {
+  document.getElementById('installBanner').style.display = 'none';
+  localStorage.setItem('ewms_install_dismissed', 'true');
+}
+
+// เรียกตรวจสอบหลังโหลดเสร็จ
+setTimeout(checkInstallPrompt, 2000);
+</script>
+
