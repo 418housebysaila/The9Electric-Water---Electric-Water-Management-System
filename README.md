@@ -1,176 +1,116 @@
-# ⚡💧 EWMS - Electric & Water Management System
+# The9Electric&Water - Electric & Water Management System (V.1.4.8)
 
+> **"The9Electric&Water by Saila"**
 > ระบบบริหารจัดการค่าน้ำ - ค่าไฟ คณะ 9 วัดมหาธาตุฯ เขตพระนคร กรุงเทพมหานคร
+> พัฒนาขึ้นเพื่อมอบประสบการณ์การใช้งานที่ลื่นไหลเหมือน Native App บนมือถือ พร้อมเทคโนโลยี AI ช่วยอ่านมิเตอร์
+
+---
 
 ![Google Apps Script](https://img.shields.io/badge/Google%20Apps%20Script-4285F4?style=for-the-badge&logo=google&logoColor=white)
 ![Google Sheets](https://img.shields.io/badge/Google%20Sheets-34A853?style=for-the-badge&logo=google-sheets&logoColor=white)
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Gemini AI](https://img.shields.io/badge/Gemini%20AI-8E75C2?style=for-the-badge&logo=google-gemini&logoColor=white)
 
 ---
 
-## 📋 Overview
+## 📋 ภาพรวมโครงการ (Overview)
 
-**EWMS (Electric & Water Management System)** คือ Web Application สำหรับบริหารจัดการค่าน้ำประปาและค่าไฟฟ้าของคณะ 9 วัดมหาธาตุฯ พัฒนาด้วย **Google Apps Script** ร่วมกับ **Google Sheets** เป็น Backend ใช้งานผ่านเบราว์เซอร์ทั้งบน PC และมือถือ รองรับการติดตั้งเป็นแอปบนหน้าจอหลัก (PWA-like)
-
-## ✨ Features
-
-### 🧮 การคำนวณอัตโนมัติ
-- คำนวณค่าน้ำแบบ **หารเฉลี่ย** ตามจำนวนสมาชิกที่เข้าร่วม
-- คำนวณค่าไฟฟ้ารายห้องจาก **เลขมิเตอร์ × อัตราต่อหน่วย**
-- คำนวณค่าไฟฟ้าส่วนกลางแบบ **หารเฉลี่ย** อัตโนมัติ
-- รองรับ **ยกเว้นการคิดค่าไฟ** สำหรับสมาชิกบางราย
-
-### 📄 ใบแจ้งหนี้ (Invoice)
-- สร้างใบแจ้งหนี้ **รายบุคคล** พร้อมรายละเอียดครบถ้วน
-- **บันทึกเป็นรูปภาพ** (PNG) ด้วย html2canvas
-- **พิมพ์** ใบแจ้งหนี้ผ่านเบราว์เซอร์
-- **แชร์ผ่าน LINE** รองรับทั้งส่งรูปภาพ (Web Share API) และข้อความ
-
-### 💳 ช่องทางการชำระเงิน
-- จัดการช่องทางชำระเงินหลายรายการ
-- แสดงข้อมูลบัญชีในใบแจ้งหนี้อัตโนมัติ
-
-### 📱 Mobile Friendly
-- Responsive Design รองรับทุกขนาดหน้าจอ
-- PWA-like: ติดตั้งเป็นแอปบนหน้าจอหลักได้ทั้ง iOS และ Android
-- คำแนะนำการติดตั้งแอปอัตโนมัติ
-
-### 📊 Google Sheets Backend
-- ข้อมูลสมาชิก, บันทึกการเก็บเงิน, ช่องทางชำระเงินเก็บใน Google Sheets
-- ดูและแก้ไขข้อมูลดิบได้โดยตรงผ่าน Spreadsheet
+**The9Electric&Water** เป็นระบบ Single Page Application (SPA) ที่ถูกพัฒนาขึ้นเพื่อยกระดับการจัดการสาธารณูปโภคภายในคณะ 9 วัดมหาธาตุฯ จากการจดด้วยมือสู่ระบบดิจิทัลเต็มรูปแบบ โดยเน้นความสวยงาม ประสิทธิภาพ และความปลอดภัยของข้อมูล
 
 ---
 
-## 🏗️ Project Structure
+## 🌟 ฟีเจอร์เด่น (Key Features)
+
+#### 🤖 AI-Powered OCR (New!)
+- ระบบอ่านเลขมิเตอร์ไฟฟ้าอัตโนมัติจากรูปถ่าย โดยใช้ **Google Gemini API**
+- รองรับการถ่ายรูปจากกล้องมือถือหรือเรียกจากคลังภาพ
+- ลดความผิดพลาดในการกรอกตัวเลขและประหยัดเวลา
+
+#### 📊 Dashboard & Trend Monitoring
+- กราฟเส้นแสดงแนวโน้มยอดบิลประปาและไฟฟ้าจากหลวง (6 เดือนย้อนหลัง)
+- แผนภูมิแท่งสรุปค่าไฟส่วนกลางรวมรายเดือน
+- อันดับผู้ใช้ที่มีการใช้งานสูงสุดรายปี (Yearly Ranking)
+
+#### 🔒 Security & Data Integrity
+- **Auth Guard System:** ตรวจสอบสิทธิ์เข้าใช้งานผ่านอีเมล (อ้างอิงจากชีท `Admins`)
+- **Double-Billing Protection:** ป้องกันการบันทึกบิลซ้ำในเดือนเดียวกัน
+- **Rollback System:** สามารถย้อนกลับบิลรอบล่าสุดเพื่อแก้ไขข้อมูลได้ โดยระบบจะคืนค่ามิเตอร์เดิมให้ตามลำดับ
+- **Double-Submit Protection:** กันการกดปุ่มบันทึกซ้ำซ้อน
+
+#### 📱 Native-Like UI/UX
+- ออกแบบด้วย **Tailwind CSS** ให้ความรู้สึกเหมือนแอปพลิเคชันจริง
+- ระบบ **Bottom Navigation Bar** และ Smooth Transition ระหว่าง Tab
+- **Draft System:** บันทึกตัวเลขที่จดไว้ลงใน Local Storage ของเครื่องชั่วคราว ป้องกันข้อมูลหายหากเน็ตหลุดหรือเครื่องรีเฟรช
+
+### 📄 ใบแจ้งหนี้และการชำระเงิน (Invoicing & Payment)
+เน้นความสะดวกของสมาชิกเป็นที่ตั้ง
+- **Dynamic PromptPay QR:** สร้าง QR Code ตามยอดที่ต้องจ่ายจริงรายบุคคล ไม่ต้องกรอกตัวเลขเอง ป้องกันการโอนผิด
+- **Multi-Channel Share:** ส่งใบแจ้งหนี้ให้สมาชิกได้ทันที ทั้งการบันทึกเป็นรูปภาพ, ส่งเข้ากลุ่ม LINE หรือสั่งพิมพ์
+---
+
+## 🏗️ โครงสร้างไฟล์ (Project Structure)
 
 ```
-EWMS by Saila/
-├── Code.gs             # Main entry point, Web App config, global constants
-├── SheetService.gs     # Google Sheets data access layer (CRUD)
-├── Calculation.gs      # Billing calculation logic & record saving
-├── Index.html          # Main HTML template (UI structure)
-├── Stylesheet.html     # CSS styles (embedded via include)
-├── JavaScript.html     # Client-side JavaScript (embedded via include)
-└── README.md           # This file
-```
-
-### File Descriptions
-
-| File | Description |
-|------|-------------|
-| `Code.gs` | จุดเริ่มต้นของ Web App — `doGet()`, `include()`, ค่าคงที่ต่าง ๆ |
-| `SheetService.gs` | ฟังก์ชันดึงข้อมูลจาก Google Sheets (`getMembers`, `getPaymentMethods`) |
-| `Calculation.gs` | คำนวณค่าน้ำ-ค่าไฟ, บันทึกลง Records, อัปเดตมิเตอร์ล่าสุด |
-| `Index.html` | โครงสร้าง HTML — ฟอร์มกรอกข้อมูล, Modal ใบแจ้งหนี้, Loading, Toast |
-| `Stylesheet.html` | CSS ทั้งหมด — Design System, Responsive, Components |
-| `JavaScript.html` | Client-side logic — Init, Render, Calculate, Invoice actions |
-
----
-
-## 🔧 Google Sheets Structure
-
-ระบบใช้ Google Sheets เป็นฐานข้อมูล โดยมี 3 ชีท:
-
-### `Members` — ข้อมูลสมาชิก
-| Column | Field | Description |
-|--------|-------|-------------|
-| A | `member_id` | รหัสสมาชิก |
-| B | `meter_no` | เลขมิเตอร์ |
-| C | `name` | ชื่อ |
-| D | `water_active` | เข้าร่วมค่าน้ำ (TRUE/FALSE) |
-| E | `electric_active` | เข้าร่วมค่าไฟ (TRUE/FALSE) |
-| F | `common_electric_active` | เข้าร่วมไฟส่วนกลาง (TRUE/FALSE) |
-| G | `is_exempt_electric` | ยกเว้นค่าไฟ (TRUE/FALSE) |
-| H | `last_meter_reading` | เลขมิเตอร์ล่าสุด |
-
-### `Records` — บันทึกการเก็บเงิน
-สร้างอัตโนมัติเมื่อกดคำนวณ เก็บประวัติการเรียกเก็บทุกรอบ
-
-### `Payment_methods` — ช่องทางชำระเงิน
-| Column | Field | Description |
-|--------|-------|-------------|
-| A | `method_id` | รหัสช่องทาง |
-| B | `method_name` | ชื่อช่องทาง (เช่น ธนาคาร) |
-| C | `account_name` | ชื่อบัญชี |
-| D | `account_number` | เลขที่บัญชี |
-| E | `is_active` | เปิดใช้งาน (TRUE/FALSE) |
-
----
-
-## 🚀 Deployment
-
-### Prerequisites
-- บัญชี Google ที่มีสิทธิ์สร้าง Google Apps Script
-- Google Sheets สำหรับเก็บข้อมูล
-
-### Steps
-
-1. **สร้าง Google Sheets** — สร้าง Spreadsheet ใหม่ พร้อมชีท `Members` ตามโครงสร้างด้านบน
-
-2. **สร้าง Apps Script Project**
-   - ไปที่ [script.google.com](https://script.google.com) → สร้างโปรเจกต์ใหม่
-   - หรือเปิดจาก Spreadsheet → Extensions → Apps Script
-
-3. **คัดลอกไฟล์** — สร้างไฟล์ตามโครงสร้างโปรเจกต์ แล้วคัดลอกโค้ดลงไป
-
-4. **ตั้งค่า `SPREADSHEET_ID`** — แก้ไขค่าใน `Code.gs` ให้ตรงกับ Spreadsheet ID ของคุณ:
-   ```javascript
-   const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID_HERE';
-   ```
-
-5. **Deploy เป็น Web App**
-   - กด **Deploy** → **New deployment**
-   - เลือก Type: **Web app**
-   - Execute as: **Me**
-   - Who has access: **Anyone** (หรือตามต้องการ)
-   - กด **Deploy**
-
-6. **เข้าใช้งาน** — เปิด URL ที่ได้จากการ Deploy
-
----
-
-## 📝 Usage
-
-1. **กรอกค่าน้ำจากการประปา** — ยอดรวมค่าน้ำของเดือนนั้น
-2. **กรอกค่าไฟจากการไฟฟ้า** — ยอดรวมค่าไฟของเดือนนั้น
-3. **จดเลขมิเตอร์** — กรอกเลขมิเตอร์ปัจจุบันของแต่ละห้อง (เลขเดิมจะแสดงอัตโนมัติ)
-4. **เลือกช่องทางชำระเงิน** — เลือกบัญชีที่จะแสดงในใบแจ้งหนี้
-5. **กดคำนวณ** — ระบบจะคำนวณและสร้างใบแจ้งหนี้ทุกคน
-6. **ส่งใบแจ้งหนี้** — บันทึกรูป / พิมพ์ / ส่ง LINE ได้ทันที
-
----
-
-## 🧮 Calculation Logic
-
-```
-ค่าน้ำ (ต่อคน)       = ค่าน้ำรวม ÷ จำนวนสมาชิกที่เข้าร่วม
-ค่าไฟห้อง (ต่อห้อง)   = (มิเตอร์หลัง - มิเตอร์ก่อน) × อัตราต่อหน่วย (5 บาท)
-ค่าไฟส่วนกลาง        = (ค่าไฟรวม - ค่าไฟทุกห้องรวมกัน) ÷ จำนวนสมาชิกที่เข้าร่วม
-รวมทั้งสิ้น            = ค่าน้ำ + ค่าไฟห้อง + ค่าไฟส่วนกลาง
+The9EWMS/
+├── Code.gs             # จุดเริ่มต้นระบบ, Auth Guard, Dashboard API, Gemini OCR Bridge
+├── SheetService.gs     # ชั้นจัดการข้อมูล Sheets (เพิ่ม/ลบสมาชิก, รันรหัสอัตโนมัติ)
+├── Calculation.gs      # ตรรกะการคำนวณขั้นสูง และระบบป้องกันการบันทึกผิดพลาด
+├── Index.html          # โครงสร้าง UI หลัก (SPA Structure)
+├── Stylesheet.html     # CSS Design System (Tailwind Custom & Component CSS)
+├── JavaScript.html     # Client-side Logic (OCR, Chart.js, QR Generation, Local Draft)
+└── README.md           # คู่มือการใช้งาน
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## 🔧 การตั้งค่าก่อนใช้งาน (Configuration)
 
-- **Runtime**: [Google Apps Script](https://developers.google.com/apps-script)
-- **Database**: [Google Sheets](https://www.google.com/sheets/about/)
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript
-- **Font**: [Noto Sans Thai](https://fonts.google.com/noto/specimen/Noto+Sans+Thai)
-- **Image Export**: [html2canvas](https://html2canvas.hertzen.com/)
-- **Sharing**: [LINE Share API](https://developers.line.biz/), [Web Share API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Share_API)
+ระบบจำเป็นต้องตั้งค่า **Script Properties** เพื่อความปลอดภัยและทำงานร่วมกับ API ภายนอก:
 
----
-
-## 📄 License
-
-This project is developed for internal use at **คณะ 9 วัดมหาธาตุฯ เขตพระนคร กรุงเทพมหานคร**.
+1. **SPREADSHEET_ID**: ID ของ Google Sheets ที่ใช้เป็น Database
+2. **GEMINI_API_KEY**: API Key สำหรับใช้งานระบบอ่านมิเตอร์ด้วย AI (รับได้จาก Google AI Studio)
+3. **RATE_PER_UNIT**: อัตราค่าไฟฟ้าต่อหน่วย (ตั้งค่าผ่านหน้า UI ได้ภายหลัง)
 
 ---
 
+## 🚀 การติดตั้ง (Deployment)
+
+1. **เตรียม Google Sheet**: สร้างไฟล์ Google Sheet ใหม่ และจำ ID ของไฟล์ไว้
+2. **เพิ่มโค้ด**: คัดลอกโค้ดทั้ง 6 ไฟล์ลงใน Apps Script Project
+3. **ตั้งราคาและแจ้งเตือน**: เข้า Tab ตั้งค่าเพื่อกำหนดค่าไฟต่อหน่วยและวันที่แจ้งเตือน
+4. **เพิ่ม Admin**: ใส่รายการอีเมลผู้มีสิทธิ์ใช้งานลงในชีท `Admins` (ระบบจะสร้างชีทให้เมื่อรันแอปครั้งแรก)
+5. **Deploy**: เลือก "Web App" -> Execute as "Me" -> Who has access "Anyone" (การเช็คสิทธิ์จะทำผ่านโค้ด `checkAuth_` แทน)
+
+---
+
+## 🧮 ตรรกะการคำนวณ (Calculation Logic)
+
+ระบบใช้สูตรมาตรฐานหอพัก:
+- **ค่าน้ำประปา**: ยอดรวม ÷ จำนวนสมาชิก (ที่เปิดสถานะใช้น้ำ)
+- **ค่าไฟฟ้าห้อง**: (มิเตอร์ปัจจุบัน - มิเตอร์เดิม) × อัตราหน่วย
+- **ค่าไฟฟ้าส่วนกลาง**: (ยอดบิลรวม - ยอดรวมทุกห้อง) ÷ จำนวนสมาชิก (ที่เปิดสถานะไฟส่วนกลาง)
+- **Reconciliation**: ระบบจะตรวจสอบยอดผลรวมรายคนให้ตรงกับยอดบิลหลวงก่อนบันทึกเสมอ (หากต่างเกิน 0.50 บาท ระบบจะแจ้งเตือน)
+
+---
+
+## 🛠️ เทคโนโลยีที่ใช้ (Tech Stack)
+
+- **Backend**: Google Apps Script
+- **Database**: Google Sheets
+- **Styling**: Tailwind CSS, Google Fonts (Noto Sans Thai)
+- **AI**: Google Gemini Pro Vision / Flash
+- **Charts**: Chart.js
+- **Image Generation**: html2canvas
+- **QR Code**: JavaScript Payload Generator + API
+
+---
+
+## ⚖️ สัญญาอนุญาต (License)
+
+โปรเจกต์นี้พัฒนาขึ้นโดย **Saila** สำหรับใช้งานภายใน **คณะ 9 วัดมหาธาตุฯ** สงวนลิขสิทธิ์ในการนำไปจำหน่ายต่อหรือแอบอ้างผลงาน
+
+---
 <p align="center">
-  Made with ❤️ by <strong>Saila</strong><br>
-  <em>The9Electric&Water by Saila</em>
+  <strong>The9Electric&Water by Saila</strong><br>
+  <em>"Smart Utility Management for Modern Monastic Life"</em>
 </p>

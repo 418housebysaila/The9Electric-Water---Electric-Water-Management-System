@@ -1,9 +1,8 @@
-# Old versions
-ewms_v1/
-ewms_v2/
-ewms_v3/
-ewms_v4/
-ewms_v5/
+# Ignore all subdirectories
+/*/
+
+# Ignore specific files
+การคำนวน.txt
 
 # OS files
 .DS_Store

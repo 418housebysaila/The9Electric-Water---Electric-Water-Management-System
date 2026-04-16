@@ -3,108 +3,494 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>EWMS - ระบบบริหารจัดการค่าน้ำ-ค่าไฟ คณะ 9</title>
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>The9Electric&Water</title>
 
   <!-- PWA Meta Tags -->
-  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="EWMS">
-  <meta name="theme-color" content="#76ADF5">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2376ADF5'/><text x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-size='36' font-weight='bold' fill='white'>EW</text></svg>">
+  <meta name="apple-mobile-web-app-title" content="The9EWMS">
+  <meta name="application-name" content="The9EWMS">
 
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4f46e5',
+            secondary: '#6366f1',
+            accent: '#f59e0b',
+            success: '#10b981',
+            danger: '#ef4444',
+            surface: '#f8fafc',
+            elec: '#ff9671',
+            water: '#0081cf'
+          },
+          borderRadius: {
+            'xl': '1rem',
+            '2xl': '1.5rem',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
     rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    rel="stylesheet" />
+
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
   <?!= include('Stylesheet') ?>
 </head>
 
-<body>
+<body class="bg-[#edede8] text-slate-800 font-['Noto_Sans_Thai'] select-none overflow-hidden">
 
-  <div class="header">
-    <h1>Electric&Water Management System</h1>
-    <p>ระบบบริหารจัดการค่าน้ำ - ค่าไฟ คณะ 9 วัดมหาธาตุ เขตพระนคร กรุงเทพมหานคร</p>
-  </div>
-
-  <div class="container">
-    <!-- Debug Box (แสดงสถานะการเชื่อมต่อ) -->
-    <div class="debug-box" id="debugBox">กำลังเชื่อมต่อ Google Sheets...</div>
-
-    <!-- ค่าน้ำ -->
-    <div class="card">
-      <div class="card-title"><span class="icon">💧</span> ค่าน้ำจากการประปา</div>
-      <div class="form-group">
-        <label>จำนวนเงิน (บาท)</label>
-        <input type="number" id="waterBillTotal" class="form-input" placeholder="กรอกค่าน้ำจากการประปา" min="0"
-          step="0.01">
+  <!-- Top Header -->
+  <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-40 safe-top">
+    <div class="px-5 py-4 flex justify-between items-center">
+      <div>
+        <h1 class="text-xl font-bold text-primary">The9EWMS</h1>
+        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Electric & Water Management system
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="relative p-2 rounded-full hover:bg-slate-100 transition-colors" onclick="switchTab('dashboard')">
+          <span class="material-symbols-rounded text-slate-600">notifications</span>
+          <div id="notif-dot"
+            class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white hidden"></div>
+        </button>
       </div>
     </div>
+  </header>
 
-    <!-- ค่าไฟ -->
-    <div class="card">
-      <div class="card-title"><span class="icon">⚡</span> ค่าไฟจากการไฟฟ้า</div>
-      <div class="form-group">
-        <label>จำนวนเงิน (บาท)</label>
-        <input type="number" id="electricBillTotal" class="form-input" placeholder="กรอกค่าไฟจากการไฟฟ้า" min="0"
-          step="0.01">
-      </div>
-    </div>
+  <!-- Main Viewport (SPA Tabs) -->
+  <main id="app-viewport" class="relative w-full h-[100dvh] pt-20 pb-24 overflow-hidden">
 
-    <!-- มิเตอร์ -->
-    <div class="card">
-      <div class="card-title"><span class="icon">📝</span> จดเลขมิเตอร์ไฟฟ้า</div>
-      <div id="membersContainer">
-        <div style="text-align:center;color:var(--text-muted);padding:20px;">
-          <div class="spinner" style="margin:0 auto 12px;"></div>
-          กำลังโหลดข้อมูลสมาชิก...
+    <!-- Tab Dashboard -->
+    <section id="tab-dashboard"
+      class="tab-view absolute inset-0 pt-20 pb-24 px-5 overflow-y-auto active transition-all duration-300">
+      <div class="space-y-5 pb-10">
+        <!-- Notification Banner -->
+        <div id="notif-banner"
+          class="hidden bg-amber-50 border border-amber-100 p-4 rounded-xl flex items-start gap-3 shadow-sm shadow-amber-50">
+          <span class="material-symbols-rounded text-amber-500">info</span>
+          <div class="flex-1">
+            <div class="text-sm font-bold text-amber-800">วันที่จดมิเตอร์</div>
+            <div class="text-[11px] text-amber-700">วันนี้เข้าสู่วงรอบการจดมิเตอร์แล้ว
+              อย่าลืมบันทึกข้อูมลให้ครบทุกคนนะครับ</div>
+          </div>
+          <button onclick="document.getElementById('notif-banner').classList.add('hidden')"
+            class="text-amber-400">✕</button>
+        </div>
+
+
+        <!-- Graph Section: Authority Bills -->
+        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm shadow-slate-200">
+          <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2 text-sm">
+            <span class="material-symbols-rounded text-primary">account_balance</span> แนวโน้ม (ประปา - ไฟฟ้า)
+          </h3>
+          <div class="h-48 w-full">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Graph Section: Total Common Electric -->
+        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm shadow-slate-200">
+          <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2 text-sm">
+            <span class="material-symbols-rounded text-amber-500">bolt</span> สรุปค่าไฟส่วนกลางรวม (รายเดือน)
+          </h3>
+          <div class="h-48 w-full">
+            <canvas id="commonChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Yearly Ranking -->
+        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm shadow-slate-200">
+          <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2 text-sm">
+            <span class="material-symbols-rounded text-accent">workspace_premium</span> อันดับผู้ใช้งานสูงสุด (บาท)
+          </h3>
+          <div id="dash-top-users" class="space-y-3">
+            <div class="flex items-center justify-center py-4 text-slate-400 text-xs italic">กำลังโหลดข้อมูล...</div>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- ชำระเงิน -->
-    <div class="card">
-      <div class="card-title"><span class="icon">💳</span> ช่องทางการชำระเงิน</div>
-      <div class="form-group">
-        <label>เลือกช่องทางที่แสดงในใบแจ้งหนี้</label>
-        <select id="paymentMethod" class="form-select">
-          <option value="">-- กำลังโหลด --</option>
-        </select>
+    <!-- Tab Meter Reading -->
+    <section id="tab-meter"
+      class="tab-view absolute inset-0 pt-20 pb-24 px-5 overflow-y-auto hidden transition-all duration-300">
+      <div class="space-y-5 pt-5 pb-10">
+        <!-- Global Input -->
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <!-- Water Bill Card -->
+            <div class="bg-[#0081cf]/10 p-4 rounded-3xl border border-[#0081cf]/20 space-y-1">
+              <div class="flex items-center gap-1.5 text-[#0081cf] mb-1">
+                <span class="material-symbols-rounded text-sm">water_drop</span>
+                <span class="text-[10px] font-bold uppercase tracking-tight">ค่าน้ำประปา (บาท)</span>
+              </div>
+              <input type="number" id="waterBillTotal"
+                class="w-full text-xl font-bold bg-transparent text-[#0081cf] outline-none border-b border-[#0081cf]/30 focus:border-[#0081cf]"
+                placeholder="0.00">
+            </div>
+
+            <!-- Electric Bill Card -->
+            <div class="bg-[#ff9671]/10 p-4 rounded-3xl border border-[#ff9671]/20 space-y-1">
+              <div class="flex items-center gap-1.5 text-[#ff9671] mb-1">
+                <span class="material-symbols-rounded text-sm">bolt</span>
+                <span class="text-[10px] font-bold uppercase tracking-tight">ค่าไฟฟ้า (บาท)</span>
+              </div>
+              <input type="number" id="electricBillTotal"
+                class="w-full text-xl font-bold bg-transparent text-[#ff9671] outline-none border-b border-[#ff9671]/30 focus:border-[#ff9671]"
+                placeholder="0.00">
+            </div>
+          </div>
+
+          <!-- Payment Method Card (Separated) -->
+          <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm shadow-slate-200">
+            <div class="space-y-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-rounded text-primary text-sm">account_balance_wallet</span>
+                <label class="text-[10px] font-bold text-slate-400 capitalize tracking-tight">ช่องทางรับเงิน
+                  (แสดงหน้าใบแจ้งหนี้)</label>
+              </div>
+              <select id="paymentMethod"
+                class="w-full text-sm font-semibold text-slate-600 bg-slate-50 rounded-xl px-3 py-3 outline-none border border-slate-100 focus:border-primary">
+                <option value="">-- กลิ้งโหลด --</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Member List -->
+        <div class="space-y-3">
+          <div class="flex justify-between items-center px-1">
+            <h3 class="font-bold text-slate-700 text-sm">รายชื่อสมาชิก</h3>
+            <span class="text-xs text-primary font-bold bg-primary/10 px-3 py-1 rounded-full" id="recorded-count">0/0
+              จดแล้ว</span>
+          </div>
+          <div id="membersContainer" class="space-y-2">
+            <!-- Cards will be rendered here -->
+          </div>
+        </div>
+
+        <button id="btnCalculate"
+          class="w-full bg-primary text-white py-4 rounded-2xl font-bold shadow-lg shadow-primary/30 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+          onclick="handleCalculate()">
+          <span class="material-symbols-rounded">calculate</span> คำนวณและออกใบแจ้งหนี้
+        </button>
       </div>
-    </div>
+    </section>
 
-    <button id="btnCalculate" class="btn btn-primary" onclick="handleCalculate()" disabled>
-      🧮 คำนวนและออกใบแจ้งหนี้
+    <!-- Tab Settings -->
+    <section id="tab-settings"
+      class="tab-view absolute inset-0 pt-20 pb-24 px-5 overflow-y-auto hidden transition-all duration-300">
+      <div class="space-y-5 pt-5 pb-10">
+        <!-- Last Bill Recovery -->
+        <div class="bg-gradient-to-r from-[#0081cf] to-[#ff9671] p-[1px] rounded-3xl shadow-sm">
+          <div class="bg-white rounded-3xl p-5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0081cf] to-[#ff9671] flex items-center justify-center">
+                  <span class="material-symbols-rounded text-white text-lg">receipt_long</span>
+                </div>
+                <div>
+                  <div class="text-sm font-bold text-slate-700">เรียกดูบิลล่าสุด</div>
+                  <div class="text-[10px] text-slate-400">ดูใบแจ้งหนี้รอบที่ผ่านมา</div>
+                </div>
+              </div>
+              <button onclick="loadLastBill()"
+                class="bg-gradient-to-r from-[#0081cf] to-[#ff9671] text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-transform shadow-lg shadow-[#0081cf]/20">
+                <span class="material-symbols-rounded text-sm">visibility</span> เปิดดู
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Undo Last Billing -->
+        <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-danger/10 flex items-center justify-center">
+                <span class="material-symbols-rounded text-danger text-lg">undo</span>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-slate-700">ย้อนกลับบิลรอบล่าสุด</div>
+                <div class="text-[10px] text-slate-400">ลบบิลรอบล่าสุดและคืนค่ามิเตอร์เดิม</div>
+              </div>
+            </div>
+            <button onclick="confirmRollbackLastBill()"
+              class="bg-danger/10 text-danger px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-transform">
+              <span class="material-symbols-rounded text-sm">delete_history</span> ย้อนกลับ
+            </button>
+          </div>
+        </div>
+
+        <!-- Rate Settings -->
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+          <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <span class="material-symbols-rounded text-primary">settings</span> ตั้งค่าพื้นฐาน
+          </h3>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
+              <div class="text-sm font-medium text-slate-600">ค่าไฟต่อหน่วย (฿)</div>
+              <input type="number" id="settingRate"
+                class="w-20 text-right bg-transparent border-b border-primary text-primary font-bold outline-none"
+                step="0.5">
+            </div>
+            <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl">
+              <div class="text-sm font-medium text-slate-600">วันที่แจ้งจดมิเตอร์</div>
+              <input type="number" id="settingNotifyDay"
+                class="w-20 text-right bg-transparent border-b border-primary text-primary font-bold outline-none">
+            </div>
+            <button onclick="saveAppSettings()"
+              class="w-full bg-slate-800 text-white py-3 rounded-2xl text-sm font-bold mt-2 hover:bg-black transition-colors">บันทึกตั้งค่า</button>
+          </div>
+        </div>
+
+        <!-- Management List -->
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-slate-700 text-sm">จัดการข้อมูลสมาชิก</h3>
+            <button onclick="openAddMemberModal()"
+              class="text-[10px] bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-bold flex items-center gap-1">
+              <span class="material-symbols-rounded text-[14px]">person_add</span> เพิ่มสมาชิก
+            </button>
+          </div>
+          <div id="settings-members-list" class="space-y-1 divide-y divide-slate-50 max-h-80 overflow-y-auto">
+            <!-- Mini rows -->
+          </div>
+        </div>
+
+        <!-- Version -->
+        <div class="text-center pt-4 pb-2">
+          <div class="text-[11px] text-slate-300 font-semibold italic">The9Electric&Water by Saila V.1.4.8</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Nav Bar (Pinned Sliding Indicator) -->
+  <nav
+    class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex justify-around items-center h-20 px-4 pb-safe z-50 overflow-hidden"
+    id="bottom-nav">
+    <button onclick="switchTab('dashboard')"
+      class="nav-item relative flex-1 flex flex-col items-center gap-1 z-10 transition-all active group"
+      id="nav-dashboard">
+      <span
+        class="material-symbols-rounded !text-[30px] text-slate-300 group-[.active]:text-primary transition-colors duration-300">dashboard</span>
+      <span
+        class="text-[11px] font-bold text-slate-300 group-[.active]:text-primary uppercase tracking-tighter transition-colors duration-300">หน้าหลัก</span>
     </button>
-  </div>
 
-  <!-- Invoice Modal -->
-  <div class="modal-overlay" id="invoiceModal">
-    <div class="close-modal-bar">
-      <button class="btn-close-modal" onclick="closeInvoiceModal()">✕ ปิดหน้าต่างใบแจ้งหนี้</button>
-    </div>
-    <div class="modal-content" id="invoicesContainer"></div>
-  </div>
+    <button onclick="switchTab('meter')"
+      class="nav-item relative flex-1 flex flex-col items-center gap-1 z-10 transition-all group" id="nav-meter">
+      <span
+        class="material-symbols-rounded !text-[30px] text-slate-300 group-[.active]:text-primary transition-colors duration-300">analytics</span>
+      <span
+        class="text-[11px] font-bold text-slate-300 group-[.active]:text-primary uppercase tracking-tighter transition-colors duration-300">จดมิเตอร์</span>
+    </button>
 
-  <!-- Loading -->
-  <div class="loading-overlay" id="loadingOverlay">
-    <div class="spinner"></div>
-    <div class="loading-text" id="loadingText">กำลังประมวลผล...</div>
-  </div>
+    <button onclick="switchTab('settings')"
+      class="nav-item relative flex-1 flex flex-col items-center gap-1 z-10 transition-all group" id="nav-settings">
+      <span
+        class="material-symbols-rounded !text-[30px] text-slate-300 group-[.active]:text-primary transition-colors duration-300">settings</span>
+      <span
+        class="text-[11px] font-bold text-slate-300 group-[.active]:text-primary uppercase tracking-tighter transition-colors duration-300">ตั้งค่า</span>
+    </button>
+  </nav>
 
-  <!-- Toast -->
-  <div class="toast" id="toast"></div>
+  <!-- Step-by-Step Recording Drawer -->
+  <div id="recordingModal"
+    class="modal-overlay fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm hidden flex items-end">
+    <div class="bg-white w-full rounded-t-[2.5rem] p-6 pb-12 shadow-2xl animate-slide-up">
+      <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6"></div>
+      <div id="modal-content" class="space-y-6">
+        <div class="flex justify-between items-start">
+          <div>
+            <h2 class="text-xl font-bold text-slate-800" id="m-name">ชื่อสมาชิก</h2>
+            <p class="text-xs text-slate-400" id="m-id-meter">ID | Meter No</p>
+          </div>
+          <button onclick="closeRecordingModal()"
+            class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+            <span class="material-symbols-rounded">close</span>
+          </button>
+        </div>
 
-  <!-- Install Prompt Banner -->
-  <div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;padding:16px;z-index:2500;box-shadow:0 -4px 16px rgba(0,0,0,0.1);border-radius:16px 16px 0 0;font-family:var(--font,'Noto Sans Thai',sans-serif);">
-    <div style="max-width:700px;margin:0 auto;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <strong style="font-size:0.95rem;color:#1e293b;">📲 ติดตั้งแอปบนมือถือ</strong>
-        <button onclick="dismissInstall()" style="background:none;border:none;font-size:1.2rem;color:#94a3b8;cursor:pointer;">✕</button>
+        <!-- Master Presence Toggle -->
+        <div class="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-rounded text-success">account_circle</span>
+            <div>
+              <div class="text-sm font-bold text-slate-700">เข้าพักในเดือนนี้</div>
+              <div class="text-[10px] text-slate-400">เปิดเพื่อคิดค่าน้ำ/ค่าไฟ</div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="m-status-toggle" checked onchange="toggleMasterStatus(this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div id="m-status-dependent-ui" class="space-y-6">
+          <!-- Toggles Moved Up -->
+          <div class="flex flex-wrap gap-x-5 gap-y-3 py-1" id="m-toggles"></div>
+
+          <!-- Exempt Message -->
+          <div id="m-exempt-msg"
+            class="hidden bg-slate-100 p-6 rounded-2xl flex flex-col items-center justify-center text-center gap-2 border-2 border-dashed border-slate-200">
+            <span class="material-symbols-rounded text-slate-400 text-4xl">energy_savings_leaf</span>
+            <div class="text-slate-500 font-bold">ยกเว้นการคิดค่าไฟ</div>
+            <div class="text-[10px] text-slate-400">สมาชิกรายนี้ไม่ต้องบันทึกเลขมิเตอร์ไฟฟ้า</div>
+          </div>
+
+          <!-- Meter Input Section -->
+          <div id="m-input-section" class="space-y-4">
+            <div class="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-2xl">
+              <div class="space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 block uppercase">ครั้งก่อน</span>
+                <div class="text-2xl font-mono text-slate-400" id="m-val-before">0</div>
+              </div>
+              <div class="space-y-1">
+                <span class="text-[10px] font-bold text-primary block uppercase">ครั้งนี้</span>
+                <input type="number" id="m-val-after"
+                  class="w-full text-2xl font-mono text-primary font-bold bg-transparent outline-none focus:bg-white rounded-lg px-1"
+                  placeholder="0000">
+              </div>
+            </div>
+
+            <!-- OCR Box (Compact) -->
+            <div class="relative rounded-2xl overflow-hidden bg-slate-900 group" id="ocrZone">
+              <div class="aspect-[21/9] flex items-center justify-center">
+                <img id="ocrPreview" class="absolute inset-0 w-full h-full object-cover opacity-50">
+                <div class="placeholder flex flex-col items-center text-white/40">
+                  <span class="material-symbols-rounded text-3xl mb-1">photo_camera</span>
+                  <p class="text-[9px]">ถ่ายรูปมิเตอร์</p>
+                </div>
+              </div>
+              <div
+                class="scan absolute left-0 right-0 h-1 bg-primary/80 blur-sm top-0 opacity-0 group-[.scanning]:opacity-100 animate-scan">
+              </div>
+            </div>
+
+            <div class="block">
+              <button
+                class="w-full flex items-center justify-center gap-2 bg-slate-800 text-white py-3 rounded-xl text-xs font-bold active:scale-[0.98] transition-transform shadow-lg shadow-slate-800/20"
+                onclick="openOcrCamera()">
+                <span class="material-symbols-rounded text-sm">camera_alt</span> ถ่ายรูป / เลือกจากคลังภาพ
+              </button>
+            </div>
+          </div> <!-- End of m-input-section -->
+        </div> <!-- End of m-status-dependent-ui -->
+
+        <button
+          class="w-full bg-primary text-white py-4 rounded-2xl font-bold shadow-lg shadow-primary/20 flex items-center justify-center gap-2 mt-2 active:scale-95 transition-transform"
+          onclick="saveDraftReading()">
+          <span class="material-symbols-rounded">check_circle</span> บันทึกเลขมิเตอร์
+        </button>
+
       </div>
-      <div id="installInstructions" style="font-size:0.82rem;color:#475569;line-height:1.6;"></div>
     </div>
   </div>
+
+  <!-- Add Member Modal -->
+  <div id="memberEditModal"
+    class="modal-overlay fixed inset-0 z-[150] bg-black/60 hidden flex items-center justify-center p-6">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
+      <h3 class="text-lg font-bold text-slate-800">เพิ่มสมาชิกใหม่</h3>
+      <div class="space-y-2">
+        <!-- รหัสสมาชิก (Auto) -->
+        <div class="relative">
+          <input type="text" id="mem-id" readonly
+            class="w-full p-3.5 rounded-xl bg-slate-100 border border-slate-200 outline-none text-sm font-bold text-primary cursor-not-allowed"
+            placeholder="กำลังโหลด...">
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400 uppercase">Auto</span>
+        </div>
+        <!-- เลขมิเตอร์ (Auto) -->
+        <div class="relative">
+          <input type="text" id="mem-meter-no" readonly
+            class="w-full p-3.5 rounded-xl bg-slate-100 border border-slate-200 outline-none text-sm font-bold text-slate-600 cursor-not-allowed"
+            placeholder="กำลังโหลด...">
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400 uppercase">Auto</span>
+        </div>
+        <!-- ชื่อ-นามสกุล (ต้องกรอกเอง) -->
+        <input type="text" id="mem-name" placeholder="ชื่อ-นามสกุล"
+          class="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-100 outline-none text-sm font-medium focus:border-primary">
+        <!-- Toggles 2x2 -->
+        <div class="grid grid-cols-2 gap-2 mt-2">
+          <label class="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
+            <input type="checkbox" id="mem-water" checked class="w-4 h-4 rounded text-primary">
+            <span class="text-[11px] font-bold text-slate-500">ค่าน้ำ</span>
+          </label>
+          <label class="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
+            <input type="checkbox" id="mem-elec" checked class="w-4 h-4 rounded text-primary">
+            <span class="text-[11px] font-bold text-slate-500">ค่าไฟ</span>
+          </label>
+          <label class="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
+            <input type="checkbox" id="mem-common" checked class="w-4 h-4 rounded text-primary">
+            <span class="text-[11px] font-bold text-slate-500">ค่าไฟส่วนกลาง</span>
+          </label>
+          <label class="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
+            <input type="checkbox" id="mem-exempt" class="w-4 h-4 rounded text-primary">
+            <span class="text-[11px] font-bold text-slate-500">ยกเว้นค่าไฟ</span>
+          </label>
+        </div>
+      </div>
+      <div class="flex gap-4 pt-4">
+        <button onclick="closeAddMemberModal()" class="flex-1 py-3 text-slate-400 font-bold text-sm">ยกเลิก</button>
+        <button onclick="submitAddMember()"
+          class="flex-[2] bg-primary text-white py-3 rounded-2xl font-bold text-sm shadow-xl shadow-primary/20">บันทึกข้อมูล</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoices Result Modal -->
+  <div class="modal-overlay fixed inset-0 z-[200] bg-slate-50 hidden overflow-y-auto" id="invoiceModal">
+    <div class="min-h-screen py-8 pb-32 px-5 max-w-sm mx-auto flex flex-col items-center">
+      <div class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur p-4 z-10 flex justify-between items-center">
+        <h2 class="font-bold text-primary">สรุปบิลเดือนนี้</h2>
+        <button class="bg-danger/10 text-danger px-4 py-1.5 rounded-full text-xs font-bold"
+          onclick="closeInvoiceModal()">ปิดหน้าต่าง</button>
+      </div>
+      <div id="invoicesContainer" class="w-full space-y-8 mt-16"></div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Loading Loader -->
+  <div id="loadingOverlay"
+    class="fixed inset-0 z-[300] bg-gradient-to-br from-water to-elec flex flex-col items-center justify-center text-center p-6 hidden">
+    <div class="mb-8 space-y-1">
+      <h1 class="text-4xl font-black text-white tracking-tighter">The9</h1>
+      <p class="text-sm font-bold text-white/80 uppercase tracking-[4px]">Electric&Water</p>
+    </div>
+    <div class="relative mb-6">
+      <div class="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+    </div>
+    <p id="loadingText" class="text-white/90 font-medium text-sm tracking-wide animate-pulse">กำลังโหลดข้อมูลพื้นฐาน...
+    </p>
+  </div>
+
+  <!-- Toast Message -->
+  <div id="toast"
+    class="fixed top-28 left-6 right-6 z-[400] p-4 rounded-2xl text-white text-sm font-bold shadow-xl translate-y-[-100px] transition-transform duration-300 pointer-events-none text-center">
+  </div>
+
+  <!-- Hidden OCR Inputs -->
+  <input type="file" id="ocrCaptureInput" accept="image/*" capture="environment" onchange="handleOcrFile(event)"
+    class="hidden">
+  <input type="file" id="ocrGalleryInput" accept="image/*" onchange="handleOcrFile(event)" class="hidden">
 
   <?!= include('JavaScript') ?>
 </body>
